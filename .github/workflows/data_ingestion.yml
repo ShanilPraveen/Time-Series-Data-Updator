@@ -1,0 +1,54 @@
+# A unique name for your workflow. This name will appear in the 'Actions' tab.
+name: Daily Data Ingestion
+
+# This specifies when the workflow should run.
+on:
+  # The 'schedule' keyword is what automates the task.
+  schedule:
+    # This cron expression runs the job every day at 5:00 PM UTC.
+    # Sri Lanka Time (SLT) is UTC+5:30.
+    # 10:30 PM SLT is equivalent to 5:00 PM UTC.
+    # The cron format is: minute hour day_of_month month day_of_week
+    - cron: '30 17 * * *'
+
+# The jobs that will be executed in this workflow.
+jobs:
+  run-ingestion-script:
+    # The runner environment where the job will execute. 'ubuntu-latest' is a
+    # virtual machine with a fresh Linux environment.
+    runs-on: ubuntu-latest
+
+    # The steps that make up the job.
+    steps:
+      # Step 1: Check out the repository code. This action pulls your
+      # repository's content into the runner environment.
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # Step 2: Set up a Python environment.
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          # Specify the Python version your script needs.
+          python-version: '3.11'
+
+      # Step 3: Install all the libraries from your requirements.txt file.
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      # Step 4: Run your Python script.
+      # The 'env' section is how you securely pass the GitHub secrets to your script
+      # as environment variables, which your code already reads.
+      - name: Run data ingestion script
+        run: python ingest_timeseries_data.py
+        env:
+          MONGO_URI: ${{ secrets.MONGO_URI }}
+          MONGO_DB_NAME: ${{ secrets.MONGO_DB_NAME }}
+          MONGO_COLLECTION_NAME: ${{ secrets.MONGO_COLLECTION_NAME }}
+          TIMESCALEDB_HOST: ${{ secrets.TIMESCALEDB_HOST }}
+          TIMESCALEDB_PORT: ${{ secrets.TIMESCALEDB_PORT }}
+          TIMESCALEDB_DB: ${{ secrets.TIMESCALEDB_DB }}
+          TIMESCALEDB_USER: ${{ secrets.TIMESCALEDB_USER }}
+          TIMESCALEDB_PASSWORD: ${{ secrets.TIMESCALEDB_PASSWORD }}
